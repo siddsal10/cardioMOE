@@ -1,0 +1,22 @@
+# Shared settings for every script. Paths are relative to the repo root.
+seed: 42
+seeds: [42, 43, 44]
+device: auto          # auto -> cuda, then mps, then cpu
+debug: false          # --debug: ~200 samples, CPU, a few minutes
+debug_n_samples: 200
+
+paths:
+  raw: data/raw
+  processed: data/processed
+  ptbxl: data/raw/ptbxl
+  chapman: data/raw/chapman
+  ptbxl_plus: data/raw/ptbxl_plus
+  pk_images: data/raw/ecg_images_pk
+  mtsamples: data/raw/mtsamples
+  checkpoints: outputs/checkpoints
+  cache: outputs/cache
+  figures: outputs/figures
+  tables: outputs/tables
+
+superclasses: [NORM, MI, STTC, CD, HYP]
+sampling_rate: 100
