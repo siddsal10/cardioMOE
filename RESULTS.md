@@ -206,3 +206,50 @@ Confusion matrices for every class and model are in `outputs/fourclient/tables/p
 **Limitations:** fold 9 is used for early stopping, temperature, thresholds and weights, so its numbers are optimistic; fold 10 is clean. Each client trains on a quarter of the data. The bootstrap CIs are per seed and resample records, not patients (fold 10 has 2,158 records from 1,877 patients).
 
 **Files:** `outputs/fourclient/tables/{comparison.md, comparison.csv, per_class.csv (seed 42), significance.json}` and `outputs/fourclient/figures/{training_curves, model_comparison, confusion_matrices, aggregation_weights}.png` (per-model and per-class figures use seed 42).
+
+---
+
+## Reference experiments: all-data baseline and leave-one-client-out (2026-10-18)
+
+Approved by the owner. Fold 10 was used again for evaluation only; nothing was tuned on it. Code: `python -m cardiomoe.fourclient.baseline --seeds 42 43 44`. Outputs: `outputs/fourclient/tables/{baseline_comparison.csv, baseline_comparison.json, client_subsets.csv}`.
+
+### 1. All-data baseline: what does splitting the data cost?
+
+One **CNN-LSTM** (the architecture of Client D, the best client on test) is trained on **all of folds 1–8** (17,084 records), with the identical recipe and seeds, early stopping, temperature and fold-9 thresholds. This is the model you would train if the data could be pooled.
+
+| Model | Training data | Fold-9 AUROC | Test macro AUROC [95% CI] | Macro F1 | Precision | Recall | Specificity | Exact-match acc |
+|---|---|---|---|---|---|---|---|---|
+| Best single client (D, CNN-LSTM) | folds 7–8 (25%) | 0.898 | 0.896 ± 0.001 | 0.690 | 0.670 | 0.722 | 0.882 | 0.547 |
+| **4-client equal-weight ensemble** | 4 × 2 folds, never pooled | 0.909 | **0.905 ± 0.000** | **0.708 ± 0.007** | 0.698 | 0.725 | 0.894 | **0.581 ± 0.009** |
+| **All-data CNN-LSTM** | folds 1–8 pooled (100%) | **0.914** (0.916 / 0.914 / 0.912) | **0.909 ± 0.001** | 0.707 ± 0.009 | 0.685 | 0.740 | 0.887 | 0.566 ± 0.026 |
+
+**Baseline − ensemble** (paired bootstrap on fold 10, 1,000 resamples):
+
+| Seed | Δ macro AUROC [95% CI] | Δ macro F1 [95% CI] |
+|---|---|---|
+| 42 | +0.003 [−0.001, +0.008] | −0.012 [−0.024, +0.001] |
+| 43 | +0.005 [+0.000, +0.009] | +0.012 [+0.001, +0.024] |
+| 44 | +0.003 [−0.001, +0.006] | −0.001 [−0.012, +0.009] |
+
+- **Pooling the data still wins on ranking, by a small margin.** The all-data model is +0.0035 test AUROC better on average, and the CI excludes 0 in 1 of 3 seeds. On fold 9 the gap is larger (+0.005).
+- **On thresholded decisions it is a tie.** Macro F1 is the same on average (−0.0005, mixed sign). The ensemble has higher exact-match accuracy (0.581 vs 0.566) and specificity; the baseline has higher recall.
+- **The ensemble closes about 70% of the gap.** On test AUROC, the best single client is 0.896, the ensemble 0.905 and the pooled model 0.909, so aggregation recovers 0.009 of the 0.013 lost by giving each client only a quarter of the data.
+- **Interpretation:** when data cannot be pooled (separate sites), the 4-client ensemble nearly matches a pooled model. When data can be pooled, one model on everything is slightly better on AUROC and equivalent on F1.
+
+### 2. Leave-one-client-out (equal-weight ensembles of client subsets)
+
+Mean of 3 seeds; SDs ≤ 0.003 (see `client_subsets.csv`).
+
+| Ensemble | Fold-9 AUROC | Test AUROC | Test Δ vs all four |
+|---|---|---|---|
+| **ABCD (all four)** | **0.909** | **0.905** | – |
+| ACD (drop B) | 0.908 | 0.905 | −0.000 |
+| BCD (drop A) | 0.908 | 0.904 | −0.001 |
+| ABD (drop C) | 0.905 | 0.902 | −0.003 |
+| ABC (drop D) | 0.906 | 0.901 | −0.004 |
+| best pair (CD) | 0.907 | 0.903 | −0.002 |
+| best single (D on test, C on fold 9) | 0.900 | 0.896 | −0.009 |
+
+- All four together is best on both splits. Every client contributes, but A and B add only about 0.0005 each. That is why learned weights could set A to about 0 at little cost, yet equal weights still came out slightly ahead.
+- C and D carry the most signal: dropping either costs 0.003–0.004.
+- Every 2-client ensemble beats every single client on test. Most of the gain comes from combining models at all, not from which ones are combined.

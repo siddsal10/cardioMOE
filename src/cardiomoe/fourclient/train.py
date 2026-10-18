@@ -1,6 +1,7 @@
 """Step 1: train the four clients independently.
 
     python -m cardiomoe.fourclient.train [--clients A B C D] [--seeds 42] [--debug]
+    python -m cardiomoe.fourclient.train --clients ALL      # baseline: one model on all folds 1-8
 
 Each client gets only its own PTB-XL folds (config `partition`), early-stops on fold 9,
 then has a temperature fitted on fold 9. Saved per client under outputs/fourclient/seed{s}/{X}/:
@@ -35,9 +36,18 @@ def run_dir(cfg: dict, seed: int, debug: bool):
     return d
 
 
+def spec(cfg: dict, client: str) -> tuple[str, list[int]]:
+    """(architecture, training folds) for a client A-D or a baseline from `baselines`."""
+    fc = cfg["fourclient"]
+    if client in fc["clients"]:
+        return fc["clients"][client]["arch"], fc["partition"][client]
+    b = fc["baselines"][client]
+    return b["arch"], b["folds"]
+
+
 def build(cfg: dict, client: str) -> SignalClient:
     fc = cfg["fourclient"]
-    return SignalClient(fc["clients"][client]["arch"], fc["embed_dim"], fc["dropout"])
+    return SignalClient(spec(cfg, client)[0], fc["embed_dim"], fc["dropout"])
 
 
 def load_client(cfg: dict, client: str, seed: int, debug: bool, device="cpu") -> SignalClient:
@@ -58,7 +68,7 @@ def train_one(cfg: dict, client: str, seed: int, debug: bool) -> dict:
     tcfg = fc["train"]
     set_seed(seed)
     device = get_device(cfg["device"], debug)
-    folds = fc["partition"][client]
+    folds = spec(cfg, client)[1]
     train_ds = SignalDataset(cfg, keys_for(cfg, folds, debug), train=True, debug=debug)
     val_ds = SignalDataset(cfg, keys_for(cfg, [fc["val_fold"]], debug), debug=debug)
     model = build(cfg, client)
@@ -89,7 +99,7 @@ def train_one(cfg: dict, client: str, seed: int, debug: bool) -> dict:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--clients", nargs="+", default=CLIENTS, choices=CLIENTS)
+    ap.add_argument("--clients", nargs="+", default=CLIENTS, choices=CLIENTS + list(fc_config()["fourclient"]["baselines"]))
     ap.add_argument("--seeds", type=int, nargs="+", default=[42])
     ap.add_argument("--debug", action="store_true")
     ap.add_argument("--retrain", action="store_true", help="retrain clients that already finished")

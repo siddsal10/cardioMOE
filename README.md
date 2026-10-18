@@ -50,6 +50,13 @@ python -m cardiomoe.fourclient.evaluate --seeds 42   # one-time evaluation on fo
 python scripts/launch_detached.py outputs/fourclient/run.log bash scripts/run_fourclient.sh 42
 ```
 
+Reference experiments, after the steps above:
+
+```bash
+python -m cardiomoe.fourclient.train --clients ALL --seeds 42   # one CNN-LSTM on all training folds
+python -m cardiomoe.fourclient.baseline --seeds 42              # baseline vs ensemble, client subsets
+```
+
 Every script accepts `--debug`, which runs end to end on CPU in a few minutes. Outputs go to
 `outputs/fourclient/`:
 - `seed*/`: checkpoints, histories and predictions

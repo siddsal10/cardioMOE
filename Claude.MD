@@ -122,7 +122,8 @@ src/cardiomoe/
   train/      common.py (training loop, early stopping, prediction)
   fusion/     calibration.py (temperature scaling)
   eval/       metrics.py (AUROC, AUPRC, F1, thresholds, ECE, bootstrap)
-  fourclient/ models.py, train.py, gate.py, aggregate.py, metrics.py, evaluate.py
+  fourclient/ models.py, train.py, gate.py, aggregate.py, metrics.py, evaluate.py,
+              baseline.py (all-data baseline + leave-one-client-out, run after evaluate)
 tests/        splits / patient leakage, labels, features, signal, four-client models + gate + metrics
 data/, outputs/   git-ignored
 ```
@@ -136,14 +137,16 @@ python -m cardiomoe.data.ptbxl --prepare
 python -m cardiomoe.fourclient.train --seeds 42 43 44
 python -m cardiomoe.fourclient.aggregate --seeds 42 43 44
 python -m cardiomoe.fourclient.evaluate --seeds 42 43 44     # fold 10: once
+python -m cardiomoe.fourclient.train --clients ALL --seeds 42 43 44   # reference: one model on folds 1-8
+python -m cardiomoe.fourclient.baseline --seeds 42 43 44     # baseline vs ensemble, client subsets
 ```
 
 ## 10. Known limitations
 
 - Fold 9 is used for early stopping, temperature, thresholds and the weights, so fold-9
   numbers are optimistic. Fold 10 is clean.
-- Each client sees only a quarter of the training data, so individual clients are weaker than
-  one model trained on all folds.
+- Each client sees only a quarter of the training data. One CNN-LSTM trained on all folds 1–8
+  (`baselines.ALL`) reaches 0.909 test AUROC vs 0.905 for the ensemble; F1 is tied.
 - All clients see the same input modality. A per-patient gate therefore has little signal for
   deciding whom to trust. Across seeds 42–44 the dynamic gate never beat equal or static
   weights, and equal weights were selected.

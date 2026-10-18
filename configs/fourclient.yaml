@@ -16,6 +16,8 @@ fourclient:
     B: {arch: resnet1d}
     C: {arch: bilstm}
     D: {arch: cnn_lstm}
+  baselines:                      # reference models, not part of the ensemble
+    ALL: {arch: cnn_lstm, folds: [1, 2, 3, 4, 5, 6, 7, 8]}   # one model on all training data
   embed_dim: 256
   dropout: 0.3
   train:                          # identical for every client so only architecture/data differ
