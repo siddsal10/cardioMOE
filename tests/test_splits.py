@@ -21,19 +21,3 @@ def test_ptbxl_official_folds(ptbxl_meta):
 def test_ptbxl_every_record_has_a_label(ptbxl_meta):
     y = ptbxl_meta[[c for c in ptbxl_meta if c.startswith("y_")]]
     assert (y.sum(axis=1) >= 1).all()
-
-
-def test_chapman_split_disjoint(chapman_meta):
-    assert set(chapman_meta.split) <= {"adapt_pool", "adapt_test"}
-    assert chapman_meta.index.is_unique  # one record per patient in this dataset
-    if len(chapman_meta) > 1000:
-        frac = (chapman_meta.split == "adapt_pool").mean()
-        assert 0.28 < frac < 0.32
-
-
-def test_pk_split_disjoint_and_stratified(pk_meta):
-    assert pk_meta.index.is_unique
-    assert set(pk_meta.split) == {"adapt", "test"}
-    if len(pk_meta) > 500:
-        frac = pk_meta.groupby("cls").split.apply(lambda s: (s == "adapt").mean())
-        assert frac.between(0.27, 0.33).all()

@@ -1,4 +1,4 @@
-"""Client A tabular features use only the allow-listed metadata (Section 5.3)."""
+"""Prepared PTB-XL metadata only carries allow-listed features (Section 5.3)."""
 import numpy as np
 import pandas as pd
 
@@ -12,11 +12,10 @@ def test_allow_list_is_exact():
     assert not set(TABULAR_SOURCE_COLUMNS) & set(FORBIDDEN_COLUMNS)
 
 
-def test_meta_features_equal_allow_list(ptbxl_meta, chapman_meta):
-    for meta in (ptbxl_meta, chapman_meta):
-        feats = [c[2:] for c in meta.columns if c.startswith("x_")]
-        assert feats == FEATURE_COLUMNS
-        assert not set(meta.columns) & set(FORBIDDEN_COLUMNS)
+def test_meta_features_equal_allow_list(ptbxl_meta):
+    feats = [c[2:] for c in ptbxl_meta.columns if c.startswith("x_")]
+    assert feats == FEATURE_COLUMNS
+    assert not set(ptbxl_meta.columns) & set(FORBIDDEN_COLUMNS)
 
 
 def test_tabular_cleaning():
@@ -31,8 +30,3 @@ def test_tabular_cleaning():
     assert x.weight_missing.tolist() == [0, 0, 1, 0]
     raw_age = x.age * stats["std"]["age"] + stats["mean"]["age"]
     assert np.isclose(raw_age.max(), 90)  # 300 -> capped at 90
-
-
-def test_chapman_tabular_has_missing_flags(chapman_meta):
-    assert (chapman_meta.x_height_missing == 1).all()
-    assert (chapman_meta.x_weight_missing == 1).all()

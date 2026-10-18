@@ -9,13 +9,6 @@ paths:
   raw: data/raw
   processed: data/processed
   ptbxl: data/raw/ptbxl
-  chapman: data/raw/chapman
-  ptbxl_plus: data/raw/ptbxl_plus
-  pk_images: data/raw/ecg_images_pk
-  mtsamples: data/raw/mtsamples
-  checkpoints: outputs/checkpoints
-  cache: outputs/cache
-  figures: outputs/figures
   tables: outputs/tables
 
 superclasses: [NORM, MI, STTC, CD, HYP]

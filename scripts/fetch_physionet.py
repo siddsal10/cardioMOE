@@ -6,7 +6,6 @@ Files that already exist locally with the right size are skipped, so re-running
 resumes an interrupted download.
 
     python scripts/fetch_physionet.py ptb-xl/1.0.3 data/raw/ptbxl --exclude records500/
-    python scripts/fetch_physionet.py ecg-arrhythmia/1.0.0 data/raw/chapman
 """
 from __future__ import annotations
 

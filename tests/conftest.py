@@ -21,15 +21,3 @@ def _load(cfg, fname, loader):
 def ptbxl_meta(cfg):
     from cardiomoe.data import ptbxl
     return _load(cfg, "ptbxl_meta.parquet", ptbxl.load_meta)
-
-
-@pytest.fixture(scope="session")
-def chapman_meta(cfg):
-    from cardiomoe.data import chapman
-    return _load(cfg, "chapman_meta.parquet", chapman.load_meta)
-
-
-@pytest.fixture(scope="session")
-def pk_meta(cfg):
-    from cardiomoe.data import pk_images
-    return _load(cfg, "pk_images_meta.parquet", pk_images.load_meta)

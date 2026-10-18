@@ -1,0 +1,45 @@
+# Four-client ECG system with weighted gated aggregation (redesign approved 2026-10-15).
+# Every client sees the same input (100 Hz 12-lead signal, (12, 1000)) and the same 5-superclass
+# multi-label task; they differ in architecture and in which training folds they get.
+fourclient:
+  # Official PTB-XL folds: 1-8 train (split across clients), 9 validation (early stopping,
+  # temperature, thresholds, aggregation weights), 10 untouched test.
+  partition:
+    A: [1, 2]
+    B: [3, 4]
+    C: [5, 6]
+    D: [7, 8]
+  val_fold: 9
+  test_fold: 10
+  clients:
+    A: {arch: cnn1d}
+    B: {arch: resnet1d}
+    C: {arch: bilstm}
+    D: {arch: cnn_lstm}
+  embed_dim: 256
+  dropout: 0.3
+  train:                          # identical for every client so only architecture/data differ
+    epochs: 50
+    batch_size: 128
+    lr: 1.0e-3
+    weight_decay: 1.0e-2
+    schedule: onecycle
+    patience: 8
+    num_workers: 4
+    eval_batch_size: 128           # 512 runs the BiLSTM out of MPS memory
+  gate:
+    cv_folds: 5                   # patient-grouped CV inside fold 9 to choose static vs dynamic
+    min_gain: 0.002               # a more complex combiner (equal < static < dynamic) must beat the simpler by this CV AUROC
+    static:
+      lr: 0.05
+      steps: 500
+    dynamic:
+      hidden: 32
+      dropout: 0.2
+      lr: 1.0e-3
+      weight_decay: 1.0e-2
+      epochs: 300
+      patience: 30
+      batch_size: 128
+  bootstrap: 1000
+  out_dir: outputs/fourclient
